@@ -17,6 +17,8 @@
 		var press = false;
 		var canvas = document.getElementById('canvas');
 		var ctx = canvas.getContext('2d');
+		var color = 0;
+		//that color I like: 0xA8FFCC;
 
 		function init() {
 			canvas.addEventListener('mousemove', function (e) {
@@ -44,6 +46,9 @@
             	currY = e.clientY - canvas.offsetTop;
 
             	if (press == true) {
+            		c = parseInt(color, 16) + 0xF;
+            		color = ("000000" + c.toString(16)).substr(-6);
+            		console.log(color);
             		dibujar();
             	}
                 
@@ -70,7 +75,7 @@
 			ctx.beginPath();
 			ctx.moveTo(prevX,prevY);
 			ctx.lineTo(currX,currY);
-			ctx.strokeStyle = "#A8FFCC";
+			ctx.strokeStyle = "#" + color;
 			ctx.lineWidth = 2;
         	ctx.stroke();
         	ctx.closePath();
