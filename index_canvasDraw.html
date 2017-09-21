@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>:D</title>
+	<style>
+		canvas {
+			border: 1px solid #3c3c3c;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas" height="500" width="500"></canvas>
+
+	<script>
+		var prevX = 0, prevY = 0, currX = 0, currY = 0;
+		var press = false;
+		var canvas = document.getElementById('canvas');
+		var ctx = canvas.getContext('2d');
+		var color = 0;
+		//that color I like: 0xA8FFCC;
+
+		function init() {
+			canvas.addEventListener('mousemove', function (e) {
+				mousePos('move', e)
+			}, false);
+
+			canvas.addEventListener('mousedown', function (e) {
+				mousePos('down', e)
+			}, false);
+
+			canvas.addEventListener('mouseup', function (e) {
+				mousePos('up', e)
+			}, false);
+
+			canvas.addEventListener('mouseout', function (e) {
+				mousePos('out', e)
+			}, false);
+		}
+
+		function mousePos(mouse, e) {
+			if (mouse == "move") {
+				prevX = currX;
+            	prevY = currY;
+				currX = e.clientX - canvas.offsetLeft;
+            	currY = e.clientY - canvas.offsetTop;
+
+            	if (press == true) {
+            		c = parseInt(color, 16) + 0xF;
+            		color = ("000000" + c.toString(16)).substr(-6);
+            		console.log(color);
+            		dibujar();
+            	}
+                
+			}
+
+			if (mouse == "down") {
+				press = true;
+				prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+			}
+
+			if (mouse == "up") {
+				press = false;
+			}
+
+			if (mouse == "out") {
+				press = false;
+			}
+		}
+
+		function dibujar() {
+			ctx.beginPath();
+			ctx.moveTo(prevX,prevY);
+			ctx.lineTo(currX,currY);
+			ctx.strokeStyle = "#" + color;
+			ctx.lineWidth = 2;
+        	ctx.stroke();
+        	ctx.closePath();
+		}
+
+		init();
+	</script>
+</body>
+</html>

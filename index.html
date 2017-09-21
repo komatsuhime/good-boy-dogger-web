@@ -1,87 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<title>:D</title>
-	<style>
-		canvas {
-			border: 1px solid #3c3c3c;
-		}
-	</style>
+    <meta charset="UTF-8">
+    <title>Good Boy Dogger</title>
+    <!-- by Carla Faroldi -->
+    <script src="js/ga.js"></script>
+    <script src="js/plugins.js"></script>
 </head>
+
 <body>
-	<canvas id="canvas" height="500" width="500"></canvas>
+    <script>
+    var doggerWidth = 480;
+    var doggerHeight = 480;
+    var dogger = ga(doggerWidth, doggerHeight, setup, ["img/dogger.png"]);
+    dogger.start();
 
-	<script>
-		var prevX = 0, prevY = 0, currX = 0, currY = 0;
-		var press = false;
-		var canvas = document.getElementById('canvas');
-		var ctx = canvas.getContext('2d');
-		var color = 0;
-		//that color I like: 0xA8FFCC;
+    var dog, stuff, obstacle, barksLeft, bark, alerta, gameScene, GameOverScene, positionX, positionY, stuffAmount, size, tilesX, tilesY, tiles, stuffX, stuffIndex, obstacleIndex, obstacleX;
+    var win = 0;
 
-		function init() {
-			canvas.addEventListener('mousemove', function (e) {
-				mousePos('move', e)
-			}, false);
+    alerta = dogger.text(" ", "20px Verdana", "fuchsia", 120, 120);
+    alerta.x = 120;
+    alerta.y = 120;
 
-			canvas.addEventListener('mousedown', function (e) {
-				mousePos('down', e)
-			}, false);
+    function setup() {
+        dogger.canvas.style.border = "1px black dashed";
+        dogger.backgroundColor = "white";
 
-			canvas.addEventListener('mouseup', function (e) {
-				mousePos('up', e)
-			}, false);
+        size = 48;
+        maxTiles = doggerWidth / size;
+        stuffAmount = 10;
 
-			canvas.addEventListener('mouseout', function (e) {
-				mousePos('out', e)
-			}, false);
-		}
 
-		function mousePos(mouse, e) {
-			if (mouse == "move") {
-				prevX = currX;
-            	prevY = currY;
-				currX = e.clientX - canvas.offsetLeft;
-            	currY = e.clientY - canvas.offsetTop;
+        gameScene = dogger.group();
+        dog = dogger.sprite("img/dogger.png");
+        dog.x = dogger.canvas.width / 2 - dog.width;
+        dog.y = dogger.canvas.height / 2 - dog.height;
+        gameScene.addChild(dog);
 
-            	if (press == true) {
-            		c = parseInt(color, 16) + 0xF;
-            		color = ("000000" + c.toString(16)).substr(-6);
-            		console.log(color);
-            		dibujar();
-            	}
-                
-			}
+        // bark = dogger.keyboard(98);
+        // bark.press = function() {
+        //     console.log(bark);
+        // };
 
-			if (mouse == "down") {
-				press = true;
-				prevX = currX;
-                prevY = currY;
-                currX = e.clientX - canvas.offsetLeft;
-                currY = e.clientY - canvas.offsetTop;
-			}
+        tiles = [];
 
-			if (mouse == "up") {
-				press = false;
-			}
+        for (var i = 0; i < maxTiles; i++) {
+            for (var j = 0; j < maxTiles; j++) {
+                tilesX = i * size;
+                tilesY = j * size;
+                tiles.push([tilesX, tilesY]);
+            }
+        }
 
-			if (mouse == "out") {
-				press = false;
-			}
-		}
+        stuffX = [];
+        stuffs = [];
+        for (var k = 0; k < stuffAmount; k++) {
+            stuff = dogger.rectangle(size, size, "orange");
+            stuffIndex = Math.floor(Math.random() * tiles.length);
+            stuffX = tiles[stuffIndex];
+            stuff.x = stuffX[0];
+            stuff.y = stuffX[1];
+            tiles.splice(stuffIndex, 1);
+            stuffs.push(stuff);
+            gameScene.addChild(stuff);
+        }
 
-		function dibujar() {
-			ctx.beginPath();
-			ctx.moveTo(prevX,prevY);
-			ctx.lineTo(currX,currY);
-			ctx.strokeStyle = "#" + color;
-			ctx.lineWidth = 2;
-        	ctx.stroke();
-        	ctx.closePath();
-		}
+        obstacles = [];
+        obstacleX = [];
 
-		init();
-	</script>
+        dogger.fourKeyController(dog, size, 38, 39, 40, 37);
+        dogger.state = play;
+    }
+
+    function play() {
+        dogger.move(dog);
+        dogger.contain(dog, dogger.stage.localBounds);
+
+        if (dogger.key.leftArrow.isDown || dogger.key.upArrow.isDown || dogger.key.rightArrow.isDown || dogger.key.downArrow.isDown) {
+            obstacle = dogger.rectangle(size, size, "grey");
+
+            obstacleIndex = Math.floor(Math.random() * tiles.length);
+            obstacleX = tiles[obstacleIndex];
+            obstacle.x = obstacleX[0];
+            obstacle.y = obstacleX[1];
+            tiles.splice(obstacleIndex, 1);
+
+            obstacles.push(obstacle);
+            gameScene.addChild(obstacle);
+
+            dogger.pause();
+            dogger.wait(125, resume);
+        }
+
+        function resume() {
+            dogger.resume();
+        }
+
+        stuffs = stuffs.filter(function(stuff) {
+            if (dogger.hit(dog, stuff)) {
+                win += 1;
+                gameScene.remove(stuff);
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        if (win == stuffAmount) {
+            alerta.content = "You won!";
+        }
+
+        if (dogger.key.space.isDown) {
+            obstacles = obstacles.filter(function(obstacle) {
+                gameScene.remove(obstacle);
+                return false;
+            });
+        }
+
+        var obstacleHit = false;
+
+        obstacles.forEach(function(obstacle) {
+            if (dogger.hitTestRectangle(dog, obstacle)) {
+                obstacleHit = true;
+            } else {
+                // obstacleHit = false;
+            }
+        });
+
+        if (obstacleHit === true) {
+            //moves to the left
+            if (dog.vx < 0) {
+                dog.x += size;
+            }
+            //moves to the right
+            if (dog.vx > 0) {
+                dog.x -= size;
+            }
+            //moves up
+            if (dog.vy < 0) {
+                dog.y += size;
+            }
+            //moves down
+            if (dog.vy > 0) {
+                dog.y -= size;
+            }
+        }
+    }
+    </script>
+    <p>Move and pick up the orange squares to win. You're a dog, by the way.</p>
+    <ul>
+        <li>Arrow keys: move</li>
+        <li>Spacebar: bark (remove all obstacles)</li>
+    </ul>
 </body>
+
 </html>
