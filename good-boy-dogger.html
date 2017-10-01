@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>
+        Good Boy Dogger
+    </title>
+    <!-- by Carla Faroldi -->
+    <script src="js/ga.js">
+    </script>
+    <script src="js/plugins.js">
+    </script>
+    </meta>
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    @font-face {
+        font-family: "Press Start 2P";
+        src: url("/fonts/PressStart2P-Regular.ttf") format("ttf");
+    }
+
+    html,
+    body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #FFEDF9;
+        font-family: 'Press Start 2P', sans-serif;
+        font-size: 8px;
+        color: #3c3c3c;
+        text-align: center;
+        line-height: 2em;
+    }
+
+    canvas {
+        border: 5px solid #FFEDF9;
+        box-shadow: 9px 9px 38px -3px #9E80AA;
+
+        padding: 0;
+        margin: auto;
+        display: block;
+        width: 480px;
+        height: 480px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    </style>
+</head>
+
+<body>
+    <script>
+    // Added for itch.io
+    window.onload = function() { window.focus(); }
+    window.onclick = function() { window.focus(); }
+
+    var doggerWidth = 480;
+    var doggerHeight = 480;
+    var dogger = ga(doggerWidth, doggerHeight, setup, ["img/dogger.png", "img/pizzas.png", "img/grass.png", "img/flowers.png", "sound/bark.mp3", "sound/doggersong.mp3", "sound/eat.mp3", "img/youwon.png"]);
+    dogger.start();
+
+    var dog,
+        alerta,
+        barking,
+        barksLeft,
+        GameOverScene,
+        gameScene,
+        ground,
+        dogPos,
+        dogPosIndex,
+        obstacle,
+        obstacleIndex,
+        obstacleX,
+        positionX,
+        positionY,
+        surrounded,
+        size,
+        stuff,
+        stuffAmount,
+        stuffIndex,
+        stuffX,
+        tiles,
+        tilesX,
+        world,
+        tilesY,
+        won;
+
+    var win = 0;
+
+    var bark = dogger.sound("sound/bark.mp3"),
+        eat = dogger.sound("sound/eat.mp3"),
+        music = dogger.sound("sound/doggersong.mp3");
+
+    music.loop = true;
+    music.volume = 1;
+    bark.volume = 1;
+    eat.volume = 1;
+
+    dogPosIndex = "";
+
+
+    function setup() {
+
+        var a = dogger.keyboard(65);
+
+        music.play();
+
+        a.press = function() {
+            if (!music.playing) {
+                music.restart();
+            } else {
+                music.pause();
+            }
+        };
+
+        dogger.backgroundColor = "white";
+
+
+        surrounded = 0;
+
+        size = 48;
+        maxTiles = doggerWidth / size;
+        stuffAmount = 10;
+        barksLeft = 100;
+
+        ground = dogger.tilingSprite(doggerWidth, doggerHeight, "img/grass.png");
+        ground.alpha = 0.7;
+        dogger.stage.putCenter(ground);
+
+        gameScene = dogger.group();
+
+        tiles = [];
+
+        for (var i = 0; i < maxTiles; i++) {
+            for (var j = 0; j < maxTiles; j++) {
+                tilesX = i * size;
+                tilesY = j * size;
+                tiles.push([tilesX, tilesY]);
+            }
+        }
+
+        dog = dogger.sprite("img/dogger.png");
+        dog.x = dogger.canvas.width / 2 - dog.width;
+        dog.y = dogger.canvas.height / 2 - dog.height;
+        gameScene.addChild(dog);
+
+        stuffX = [];
+        stuffs = [];
+        for (var k = 0; k < stuffAmount; k++) {
+            stuff = dogger.sprite("img/pizzas.png");
+            stuffIndex = Math.floor(Math.random() * tiles.length);
+            stuffX = tiles[stuffIndex];
+            stuff.x = stuffX[0];
+            stuff.y = stuffX[1];
+            tiles.splice(stuffIndex, 1);
+            stuffs.push(stuff);
+            gameScene.addChild(stuff);
+        }
+
+        obstacles = [];
+        obstacleX = [];
+
+        dogger.fourKeyController(dog, size, 38, 39, 40, 37);
+        dogger.state = play;
+    }
+
+    function play() {
+
+        function isItInArray(tiles, query) {
+            for (var z = 0; z < tiles.length; z++) {
+                if (tiles[z][0] == query[0] && tiles[z][1] == query[1]) {
+                    dogPosIndex = z;
+                    return true; // Found it
+                }
+            }
+            dogPosIndex = null;
+            return false; // Not found
+        }
+
+
+        function getSurroundingCords(x, y) {
+            var sRight,
+                sLeft,
+                sUp,
+                sDown;
+
+            var cords = [];
+
+            sRight = x - size;
+            sLeft = x + size;
+            sUp = y - size;
+            sDown = y + size;
+
+            cords.push([sRight, y], [sLeft, y], [x, sUp], [x, sDown]);
+
+            return cords;
+        }
+
+
+
+
+        if (dogger.key.leftArrow.isDown || dogger.key.upArrow.isDown || dogger.key.rightArrow.isDown || dogger.key.downArrow.isDown) {
+
+            dogger.move(dog);
+            dogger.contain(dog, dogger.stage.localBounds);
+
+            surrounded = 0;
+
+
+            var dogPos = [dog.x, dog.y];
+            if (isItInArray(tiles, dogPos)) {
+                console.log(tiles[dogPosIndex] + " - index: " + dogPosIndex);
+                tiles.splice(dogPosIndex, 1);
+            } else {
+                tiles.push(dogPos);
+            }
+
+            obstacle = dogger.sprite("img/flowers.png");
+            if (tiles.length > 0) {
+                obstacleIndex = Math.floor(Math.random() * tiles.length);
+                obstacleX = tiles[obstacleIndex];
+                obstacle.x = obstacleX[0];
+                obstacle.y = obstacleX[1];
+                tiles.splice(obstacleIndex, 1);
+
+                obstacles.push(obstacle);
+                gameScene.addChild(obstacle);
+            }
+
+
+            dogger.pause();
+            dogger.wait(125, resume);
+
+
+
+            var dogS = getSurroundingCords(dog.x, dog.y);
+
+            dogS.forEach(function(s) {
+                if (isItInArray(tiles, s)) {
+                    console.log("desocupado! " + s);
+                    // surrounded += 1;
+                } else {
+                    console.log("ocupado! " + s);
+                    // surrounded -= 1;
+                }
+            });
+
+            // if (surrounded == 4) {
+            //     console.log("pausa!!");
+            //     dogger.pause();
+            // }
+
+            // console.log("---");
+
+
+
+
+        }
+
+        function resume() {
+            dogger.resume();
+        }
+
+        stuffs = stuffs.filter(function(stuff) {
+            if (dogger.hit(dog, stuff)) {
+                win += 1;
+                tiles.push([stuff.x, stuff.y]);
+                gameScene.remove(stuff);
+                eat.play();
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+
+
+
+        if (dogger.key.space.isDown) {
+
+            if (barksLeft > 0) {
+                dogger.pause();
+                dogger.wait(250, resume);
+                bark.play();
+                obstacles.forEach(function(obstacle) {
+                    var obsX = obstacle.x;
+                    var obsY = obstacle.y;
+
+                    var obsPosIndex = Math.floor(Math.random() * tiles.length);
+                    var obsPos = tiles[obsPosIndex];
+                    if (dog.x == obsPos[0] && dog.y == obsPos[1]) {
+                        return false;
+                    } else {
+                        obstacle.x = obsPos[0];
+                        obstacle.y = obsPos[1];
+                        tiles.splice(obsPosIndex, 1);
+                        tiles.push([obsX, obsY]);
+                        return true;
+                    }
+                });
+                barksLeft -= 1;
+            }
+        }
+
+
+        var obstacleHit = false;
+
+        obstacles.forEach(function(obstacle) {
+            if (dogger.hitTestRectangle(dog, obstacle)) {
+                obstacleHit = true;
+            }
+        });
+
+        if (obstacleHit === true) {
+            //moves to the left
+            if (dog.vx < 0) {
+                dog.x += size;
+            }
+            //moves to the right
+            if (dog.vx > 0) {
+                dog.x -= size;
+            }
+            //moves up
+            if (dog.vy < 0) {
+                dog.y += size;
+            }
+            //moves down
+            if (dog.vy > 0) {
+                dog.y -= size;
+            }
+        }
+
+        if (win == stuffAmount) {
+            won = dogger.sprite("img/youwon.png");
+            won.x = dogger.canvas.width / 2 - won.width / 2;
+            won.y = dogger.canvas.height / 2 - won.height / 2;
+            gameScene.addChild(won);
+        }
+    }
+    </script>
+</body>
+
+</html>

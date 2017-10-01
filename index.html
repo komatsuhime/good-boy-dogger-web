@@ -2,181 +2,85 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Good Boy Dogger</title>
+    <meta charset="utf-8">
+    <title>
+        Good Boy Dogger
+    </title>
     <!-- by Carla Faroldi -->
-    <script src="js/ga.js"></script>
-    <script src="js/plugins.js"></script>
+    <script src="js/ga.js">
+    </script>
+    <script src="js/plugins.js">
+    </script>
+    </meta>
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    @font-face {
+        font-family: "Press Start 2P";
+        src: url("/fonts/PressStart2P-Regular.ttf") format("ttf");
+    }
+
+    html,
+    body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #FFEDF9;
+        font-family: 'Press Start 2P', sans-serif;
+        font-size: 8px;
+        color: #6d6d6d;
+        text-align: center;
+        line-height: 2em;
+    }
+
+    .color-pink {
+        color: #ef6191;
+    }
+
+    a:link,
+    a:visited,
+    a:hover {
+        color: #ef6191;
+        font-size: 16px;
+        text-decoration: none;
+    }
+
+    div {
+        padding: 0;
+        margin: auto;
+        display: block;
+        width: 480px;
+        height: 480px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    </style>
 </head>
 
 <body>
-    <script>
-    var doggerWidth = 480;
-    var doggerHeight = 480;
-    var dogger = ga(doggerWidth, doggerHeight, setup, ["img/dogger.png", "img/pizza.png"]);
-    dogger.start();
-
-    var dog,
-        alerta,
-        bark,
-        barksLeft,
-        GameOverScene,
-        gameScene,
-        obstacle,
-        obstacleIndex,
-        obstacleX,
-        positionX,
-        positionY,
-        size,
-        stuff,
-        stuffAmount,
-        stuffIndex,
-        stuffX,
-        tiles,
-        tilesX,
-        tilesY;
-
-    var win = 0;
-
-    alerta = dogger.text(" ", "20px Verdana", "fuchsia", 120, 120);
-    alerta.x = 120;
-    alerta.y = 120;
-
-    function setup() {
-        dogger.canvas.style.border = "1px black dashed";
-        dogger.backgroundColor = "white";
-
-        size = 48;
-        maxTiles = doggerWidth / size;
-        stuffAmount = 10;
-        barksLeft = 0;
-        bark = false;
-
-
-        gameScene = dogger.group();
-        dog = dogger.sprite("img/dogger.png");
-        dog.x = dogger.canvas.width / 2 - dog.width;
-        dog.y = dogger.canvas.height / 2 - dog.height;
-        gameScene.addChild(dog);
-
-        //dog.draggable = true;
-
-        // bark = dogger.keyboard(98);
-        // bark.press = function() {
-        //     console.log(bark);
-        // };
-
-        tiles = [];
-
-        for (var i = 0; i < maxTiles; i++) {
-            for (var j = 0; j < maxTiles; j++) {
-                tilesX = i * size;
-                tilesY = j * size;
-                tiles.push([tilesX, tilesY]);
-            }
-        }
-
-        stuffX = [];
-        stuffs = [];
-        for (var k = 0; k < stuffAmount; k++) {
-            //stuff = dogger.rectangle(size, size, "orange");
-            stuff = dogger.sprite("img/pizza.png");
-            stuffIndex = Math.floor(Math.random() * tiles.length);
-            stuffX = tiles[stuffIndex];
-            stuff.x = stuffX[0];
-            stuff.y = stuffX[1];
-            tiles.splice(stuffIndex, 1);
-            stuffs.push(stuff);
-            gameScene.addChild(stuff);
-        }
-
-        obstacles = [];
-        obstacleX = [];
-
-        dogger.fourKeyController(dog, size, 38, 39, 40, 37);
-        dogger.state = play;
-    }
-
-    function play() {
-        dogger.move(dog);
-        dogger.contain(dog, dogger.stage.localBounds);
-
-        if (dogger.key.leftArrow.isDown || dogger.key.upArrow.isDown || dogger.key.rightArrow.isDown || dogger.key.downArrow.isDown) {
-            obstacle = dogger.rectangle(size, size, "grey");
-            obstacleIndex = Math.floor(Math.random() * tiles.length);
-            obstacleX = tiles[obstacleIndex];
-            obstacle.x = obstacleX[0];
-            obstacle.y = obstacleX[1];
-            tiles.splice(obstacleIndex, 1);
-
-            obstacles.push(obstacle);
-            gameScene.addChild(obstacle);
-
-            dogger.pause();
-            dogger.wait(125, resume);
-        }
-
-        function resume() {
-            dogger.resume();
-        }
-
-        stuffs = stuffs.filter(function(stuff) {
-            if (dogger.hit(dog, stuff)) {
-                win += 1;
-                gameScene.remove(stuff);
-                return false;
-            } else {
-                return true;
-            }
-        });
-
-        if (win == stuffAmount) {
-            alerta.content = "You won!";
-        }
-
-        if (dogger.key.space.isDown) {
-
-         
-                obstacles.forEach(function(obstacle) {
-                    obstacle.x = size * dogger.randomInt(0, maxTiles);
-                    obstacle.y = size * dogger.randomInt(0, maxTiles);
-                });
-                         
-        }
-
-        var obstacleHit = false;
-
-        obstacles.forEach(function(obstacle) {
-            if (dogger.hitTestRectangle(dog, obstacle)) {
-                obstacleHit = true;
-            }
-        });
-
-        if (obstacleHit === true) {
-            //moves to the left
-            if (dog.vx < 0) {
-                dog.x += size;
-            }
-            //moves to the right
-            if (dog.vx > 0) {
-                dog.x -= size;
-            }
-            //moves up
-            if (dog.vy < 0) {
-                dog.y += size;
-            }
-            //moves down
-            if (dog.vy > 0) {
-                dog.y -= size;
-            }
-        }
-    }
-    </script>
-    <p>Move and pick up the orange squares to win. You're a dog, by the way.</p>
-    <ul>
-        <li>Arrow keys: move</li>
-        <li>Spacebar: bark (shuffle all obstacles)</li>
-    </ul>
+    <div>
+        <p>Move and eat the floating pizzas to win.</p>
+        <p>You can't step on the pretty flowers
+            <br>because you're a good boy.</p>
+        <p>Bark and shuffle them if they give you trouble.</p>
+        <br>
+        <p>Good luck, dogger!</p>
+        <br>
+        <p class="color-pink">Controls:</p>
+        <p>arrow keys: move</p>
+        <p>spacebar: bark (shuffle all flowers)</p>
+        <p>a: pause/play music</p>
+        <br>
+        <br>
+        <br>
+        <a href="good-boy-dogger.html">Play!</a>
+    </div>
 </body>
 
 </html>
